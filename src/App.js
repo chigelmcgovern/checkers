@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const BoardRowIndices = [...Array(8).keys()]
@@ -32,7 +32,7 @@ const Checker = styled.div`
   height: 25px;
   width: 25px;
   margin: auto;
-  background-color: ${(props) => (props.color)};
+  background-color: ${(props) => (props.selected ? '#39ff14' : props.color)};
   border-radius: 50%;
 `;
 
@@ -41,6 +41,7 @@ let initialBoard = new Array(8).fill(new Array(8).fill(null));
 let checker = {
   color: '',
   isKing: '',
+  selected: false
 };
 
 function newGame(board) {
@@ -74,14 +75,19 @@ function determineSquareColor(props) {
   return ((rowIndex + columnIndex) % 2 === 0) ? '#dfd0c0' : 'black';
 };
 
-function createRow(rowIndex, board) {
+function createRow(rowIndex, board, setBoard) {
   return (
     <BoardRow>
       {
-        BoardRowIndices.map(
-          (columnIndex) => (
-            <Square row_index={rowIndex} column_index={columnIndex}>
-              {(!!board[rowIndex][columnIndex]) ? <Checker color={board[rowIndex][columnIndex].color}/> : null}
+        board.map(
+          (_, columnIndex) => (
+            <Square row_index={rowIndex} column_index={columnIndex}
+                    onClick={function() { updateBoard(board, rowIndex, columnIndex, setBoard); }}
+            >
+              {(!!board[rowIndex][columnIndex]) ? <Checker
+                color={board[rowIndex][columnIndex].color}
+                selected={board[rowIndex][columnIndex].selected}
+              /> : null}
             </Square>
           )
         )
@@ -90,12 +96,61 @@ function createRow(rowIndex, board) {
   )
 };
 
+function movePiece(rowIndex, colIndex) {
+  return [rowIndex + 1, colIndex]
+}
+
+function isSelecting(board) {
+  const allRows = board.flat()
+  const selected = (checker) => checker && checker.selected;
+  return allRows.some(selected)
+}
+
+function findSelectedIndices(board) {
+  let selectedRowIndex;
+  let selectedColIndex;
+  board.forEach((row, rowIndex) => {
+    row.forEach((checker, colIndex) => {
+      if (checker && checker.selected) {
+        selectedRowIndex = rowIndex
+        selectedColIndex = colIndex
+      }
+    })
+  })
+  return [selectedRowIndex, selectedColIndex]
+}
+
+function updateBoard(board, rowIndex, colIndex, setBoard) {
+  // const [newRowIndex, newColIndex] = movePiece(rowIndex, colIndex)
+  // let square = board[rowIndex][colIndex]
+
+  const newBoard = board.map((row) => {
+    return row.slice()
+  })
+
+  if (isSelecting(board)) {
+    const [selectedRowIndex, selectedColIndex] = findSelectedIndices(board)
+    const selectedChecker = board[selectedRowIndex][selectedColIndex]
+    newBoard[rowIndex][colIndex] = selectedChecker
+    newBoard[selectedRowIndex][selectedColIndex] = null
+    selectedChecker.selected = false
+  } else {
+    newBoard[rowIndex][colIndex].selected = true
+  };
+
+  debugger
+  setBoard(newBoard)
+}
+
 const App = () => {
-  let board = newGame(initialBoard);
+  let checkerboard = newGame(initialBoard);
+
+  const [board, setBoard]= useState(checkerboard);
+
   return (
     <table>
-      {BoardRowIndices.map((index) => (
-        createRow(index, board)
+      {board.map((_, index) => (
+        createRow(index, board, setBoard)
       ))
       }
     </table>
