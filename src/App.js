@@ -161,16 +161,15 @@ function updateBoard(board, rowIndex, colIndex, setBoard, setPlayerTurn, playerO
 
       const potentialSecondMoves = findValidMoves(newBoard)
 
-      if (Math.abs(selectedColIndex - colIndex) === 1 || Math.abs(selectedRowIndex - rowIndex) === 1)  {
+      if (Math.abs(selectedColIndex - colIndex) === 1 || Math.abs(selectedRowIndex - rowIndex) === 1) {
         setPlayerTurn(!playerOneTurn)
         selectedChecker.selected = false
       } else if (potentialSecondMoves.length === 0) {
         setPlayerTurn(!playerOneTurn)
         selectedChecker.selected = false
       } else if (potentialSecondMoves.length > 0) {
-        debugger
         const anyJumpingMoves = potentialSecondMoves.some((coordinatePair) => {
-          return Math.abs(coordinatePair[0] - colIndex ) > 1 && Math.abs(coordinatePair[1] - rowIndex) > 1
+          return Math.abs(coordinatePair[0] - colIndex) > 1 && Math.abs(coordinatePair[1] - rowIndex) > 1
         })
         if (anyJumpingMoves) {
         } else {
@@ -200,6 +199,11 @@ function checkForJumpedPieces(selectedRowIndex, selectedColIndex, rowIndex, colI
   return Math.abs(selectedRowIndex - rowIndex) > 1 || Math.abs(selectedColIndex - colIndex) > 1;
 }
 
+function coordinatesWithinGameBoundary(coordinatePair) {
+  return coordinatePair[0] >= 0 && coordinatePair[0] <= 7 && coordinatePair[1] >= 0 && coordinatePair[1] <= 7
+
+}
+
 
 function findValidMoves(board) {
   if (isSelecting(board)) {
@@ -214,7 +218,7 @@ function findValidMoves(board) {
 
     // this filters to only valid moves, confining moves to within  the board
     const filteredValidMoves = possibleValidMoves.filter(
-      coordinates => coordinates[0] >= 0 && coordinates[0] <= 7 && coordinates[1] >= 0 && coordinates[1] <= 7
+      coordinates => coordinatesWithinGameBoundary(coordinates)
     )
     console.log(board)
     // create new array
@@ -230,13 +234,16 @@ function findValidMoves(board) {
           const adjacentCheckerCoordinatePair = adjacentCoordinatePair
           const xMovementIncrement = adjacentCheckerCoordinatePair[1] - selectedColIndex
           const adjacentCoordinatePairCopy = adjacentCoordinatePair.slice()
-          adjacentCoordinatePairCopy[1] += xMovementIncrement
           adjacentCoordinatePairCopy[0] += yMovementIncrement
+          adjacentCoordinatePairCopy[1] += xMovementIncrement
 
-          // if (coordinatePairCopy[0] === undefined) {debugger}
-          if (board[adjacentCoordinatePairCopy[0]][adjacentCoordinatePairCopy[1]] == null && board[adjacentCoordinatePair[0]][adjacentCoordinatePair[1]].color !== selectedChecker.color){
-            validMoves.push(adjacentCoordinatePairCopy)
+          if (coordinatesWithinGameBoundary(adjacentCoordinatePairCopy)) {
+            if (board[adjacentCoordinatePairCopy[0]][adjacentCoordinatePairCopy[1]] == null && board[adjacentCoordinatePair[0]][adjacentCoordinatePair[1]].color !== selectedChecker.color) {
+              validMoves.push(adjacentCoordinatePairCopy)
+            } else {
+            }
           } else {
+
           }
         }
       }
