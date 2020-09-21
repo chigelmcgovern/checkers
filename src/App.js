@@ -41,6 +41,7 @@ const Checker = styled.div`
   width: 25px;
   margin: auto;
   background-color: ${(props) => (props.selected ? '#39ff14' : props.color)};
+  border: 2px solid ${(props) => (props.isKing ? 'gold' : '')};
   border-radius: 50%;
 `;
 
@@ -48,7 +49,7 @@ let initialBoard = new Array(8).fill(new Array(8).fill(null));
 
 let checker = {
   color: '',
-  isKing: '',
+  isKing: false,
   selected: false
 };
 
@@ -109,6 +110,7 @@ function createRow(rowIndex, board, setBoard, setPlayerTurn, playerOneTurn) {
               {(!!board[rowIndex][columnIndex]) ? <Checker
                 color={board[rowIndex][columnIndex].color}
                 selected={board[rowIndex][columnIndex].selected}
+                isKing={board[rowIndex][columnIndex].isKing}
               /> : null}
             </Square>
           )
@@ -156,8 +158,10 @@ function updateBoard(board, rowIndex, colIndex, setBoard, setPlayerTurn, playerO
     const validMoves = findValidMoves(board)
     if (matchingCoordinates(validMoves, [rowIndex, colIndex])) {
       // checker is being moved here
+      debugger
       newBoard[rowIndex][colIndex] = selectedChecker
       newBoard[selectedRowIndex][selectedColIndex] = null
+      setToKing(newBoard, rowIndex, colIndex)
 
       const potentialSecondMoves = findValidMoves(newBoard)
 
@@ -195,6 +199,14 @@ function setPlayerTurn() {
 
 }
 
+function setToKing(board, rowIndex, colIndex) {
+  const checker = board[rowIndex][colIndex]
+  const color = checker.color
+  if ((color === 'white' && rowIndex === 7) || (color === 'blue' && rowIndex === 0)) {
+    checker.isKing = true
+  }
+}
+
 function checkForJumpedPieces(selectedRowIndex, selectedColIndex, rowIndex, colIndex) {
   return Math.abs(selectedRowIndex - rowIndex) > 1 || Math.abs(selectedColIndex - colIndex) > 1;
 }
@@ -204,53 +216,74 @@ function coordinatesWithinGameBoundary(coordinatePair) {
 
 }
 
-
 function findValidMoves(board) {
   if (isSelecting(board)) {
-    const possibleValidMoves = []
     const [selectedRowIndex, selectedColIndex] = findSelectedIndices(board)
     const selectedChecker = board[selectedRowIndex][selectedColIndex]
-    const yMovementIncrement = selectedChecker.color === 'white' ? 1 : -1
 
-    // this contains all possible moves, including those off the board
-    possibleValidMoves.push([selectedRowIndex + yMovementIncrement, selectedColIndex - 1])
-    possibleValidMoves.push([selectedRowIndex + yMovementIncrement, selectedColIndex + 1])
+    if (selectedChecker.isKing) {
+      let kingMovementIncrements = [-1, 1]
 
-    // this filters to only valid moves, confining moves to within  the board
-    const filteredValidMoves = possibleValidMoves.filter(
-      coordinates => coordinatesWithinGameBoundary(coordinates)
-    )
-    console.log(board)
-    // create new array
-    // iterate through filteredValidMoves
-    // push the valid moves into another array, validMoves
-    const validMoves = []
+      /*
+        kingMovementIncrements.reduce((memo, movementIncrement) => {
+          return memo.concat(determineValidMoves(board, movementIncrement));
+        }, [])
 
-    filteredValidMoves.forEach((adjacentCoordinatePair) => {
-        // if the checker location provided by coordinatePair is empty
-        if (board[adjacentCoordinatePair[0]][adjacentCoordinatePair[1]] == null) {
-          validMoves.push(adjacentCoordinatePair)
-        } else {
-          const adjacentCheckerCoordinatePair = adjacentCoordinatePair
-          const xMovementIncrement = adjacentCheckerCoordinatePair[1] - selectedColIndex
-          const adjacentCoordinatePairCopy = adjacentCoordinatePair.slice()
-          adjacentCoordinatePairCopy[0] += yMovementIncrement
-          adjacentCoordinatePairCopy[1] += xMovementIncrement
+       */
+      let moves = kingMovementIncrements.map((movementIncrement) => {
+        return determineValidMoves(board, movementIncrement)
+      })
 
-          if (coordinatesWithinGameBoundary(adjacentCoordinatePairCopy)) {
-            if (board[adjacentCoordinatePairCopy[0]][adjacentCoordinatePairCopy[1]] == null && board[adjacentCoordinatePair[0]][adjacentCoordinatePair[1]].color !== selectedChecker.color) {
-              validMoves.push(adjacentCoordinatePairCopy)
-            } else {
-            }
-          } else {
-
-          }
-        }
-      }
-    )
-    return validMoves
+      moves = moves[0].concat(moves[1])
+      return moves
+    } else {
+      const yMovementIncrement = selectedChecker.color === 'white' ? 1 : -1
+      return determineValidMoves(board, yMovementIncrement)
+    }
   }
   return []
+}
+
+function determineValidMoves(board, yMovementIncrement) {
+  const [selectedRowIndex, selectedColIndex] = findSelectedIndices(board)
+  const selectedChecker = board[selectedRowIndex][selectedColIndex]
+  let possibleValidMoves = []
+
+  possibleValidMoves.push([selectedRowIndex + yMovementIncrement, selectedColIndex - 1])
+  possibleValidMoves.push([selectedRowIndex + yMovementIncrement, selectedColIndex + 1])
+
+  // this filters to only valid moves, confining moves to within  the board
+  const filteredValidMoves = possibleValidMoves.filter(
+    coordinates => coordinatesWithinGameBoundary(coordinates)
+  )
+  console.log(board)
+  // create new array
+  // iterate through filteredValidMoves
+  // push the valid moves into another array, validMoves
+  const validMoves = []
+
+  filteredValidMoves.forEach((adjacentCoordinatePair) => {
+      // if the checker location provided by coordinatePair is empty
+      if (board[adjacentCoordinatePair[0]][adjacentCoordinatePair[1]] == null) {
+        validMoves.push(adjacentCoordinatePair)
+      } else {
+        const adjacentCheckerCoordinatePair = adjacentCoordinatePair
+        const xMovementIncrement = adjacentCheckerCoordinatePair[1] - selectedColIndex
+        const adjacentCoordinatePairCopy = adjacentCoordinatePair.slice()
+        adjacentCoordinatePairCopy[0] += yMovementIncrement
+        adjacentCoordinatePairCopy[1] += xMovementIncrement
+
+        if (coordinatesWithinGameBoundary(adjacentCoordinatePairCopy)) {
+          if (board[adjacentCoordinatePairCopy[0]][adjacentCoordinatePairCopy[1]] == null && board[adjacentCoordinatePair[0]][adjacentCoordinatePair[1]].color !== selectedChecker.color) {
+            validMoves.push(adjacentCoordinatePairCopy)
+          } else {
+          }
+        } else {
+        }
+      }
+    }
+  )
+  return validMoves
 }
 
 const App = () => {
