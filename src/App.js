@@ -5,8 +5,6 @@ import styled from 'styled-components';
 // coordinated are stored [y, x]
 // board[0, 0] is top left of board
 
-const BoardRowIndices = [...Array(8).keys()]
-
 const BoardRow = styled.div`
   &:after{}
   max-width: 600px;
@@ -101,7 +99,8 @@ function createRow(rowIndex, board, setBoard, setPlayerTurn, playerOneTurn) {
       {
         board.map(
           (_, columnIndex) => (
-            <Square row_index={rowIndex} column_index={columnIndex}
+            <Square row_index={rowIndex}
+                    column_index={columnIndex}
                     onClick={function () {
                       updateBoard(board, rowIndex, columnIndex, setBoard, setPlayerTurn, playerOneTurn);
                     }}
@@ -158,7 +157,6 @@ function updateBoard(board, rowIndex, colIndex, setBoard, setPlayerTurn, playerO
     const validMoves = findValidMoves(board)
     if (matchingCoordinates(validMoves, [rowIndex, colIndex])) {
       // checker is being moved here
-      debugger
       newBoard[rowIndex][colIndex] = selectedChecker
       newBoard[selectedRowIndex][selectedColIndex] = null
       setToKing(newBoard, rowIndex, colIndex)
@@ -173,11 +171,12 @@ function updateBoard(board, rowIndex, colIndex, setBoard, setPlayerTurn, playerO
         selectedChecker.selected = false
       } else if (potentialSecondMoves.length > 0) {
         const anyJumpingMoves = potentialSecondMoves.some((coordinatePair) => {
-          return Math.abs(coordinatePair[0] - colIndex) > 1 && Math.abs(coordinatePair[1] - rowIndex) > 1
+          return Math.abs(coordinatePair[0] - rowIndex) > 1 && Math.abs(coordinatePair[1] - colIndex) > 1
         })
         if (anyJumpingMoves) {
         } else {
           selectedChecker.selected = false
+          setPlayerTurn(!playerOneTurn)
         }
       }
 
@@ -285,6 +284,26 @@ function determineValidMoves(board, yMovementIncrement) {
   )
   return validMoves
 }
+
+function GameOver(board) {
+  const allRows = board.flat()
+  const allCheckers = allRows.filter(Boolean);
+  const pieceCount = {
+    'white': 0,
+    'black': 0
+  }
+  allCheckers.forEach((checker) => {
+    pieceCount[checker.color] += 1
+  })
+
+  for (const [key, value] of pieceCount) {
+    if (value === 0) {
+      return key === 'white' ? 'black' : 'white'
+    }
+  }
+}
+
+
 
 const App = () => {
   let checkerboard = newGame(initialBoard);
