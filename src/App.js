@@ -161,6 +161,12 @@ function updateBoard(board, rowIndex, colIndex, setBoard, setPlayerTurn, playerO
       newBoard[selectedRowIndex][selectedColIndex] = null
       setToKing(newBoard, rowIndex, colIndex)
 
+      if (checkForJumpedPieces(selectedRowIndex, selectedColIndex, rowIndex, colIndex)) {
+        const rowIndexDiff = selectedRowIndex + rowIndex
+        const colIndexDiff = selectedColIndex + colIndex
+        newBoard[rowIndexDiff / 2][colIndexDiff / 2] = null
+      }
+
       const potentialSecondMoves = findValidMoves(newBoard)
 
       if (Math.abs(selectedColIndex - colIndex) === 1 || Math.abs(selectedRowIndex - rowIndex) === 1) {
@@ -179,23 +185,27 @@ function updateBoard(board, rowIndex, colIndex, setBoard, setPlayerTurn, playerO
           setPlayerTurn(!playerOneTurn)
         }
       }
-
-      if (checkForJumpedPieces(selectedRowIndex, selectedColIndex, rowIndex, colIndex)) {
-        const rowIndexDiff = selectedRowIndex + rowIndex
-        const colIndexDiff = selectedColIndex + colIndex
-        newBoard[rowIndexDiff / 2][colIndexDiff / 2] = null
-      }
     } else {
       selectedChecker.selected = false
     }
-  } else if (newBoard[rowIndex][colIndex] != null) {
+  } else if (newBoard[rowIndex][colIndex] != null && newBoard[rowIndex][colIndex].color === determinePlayerTurn(playerOneTurn)) {
     newBoard[rowIndex][colIndex].selected = true
   }
   setBoard(newBoard)
+  const winner = checkForWinner(newBoard)
+  if (winner) {
+    if (window.confirm(`${winner} Won!\nWould you like to play again?`)) {
+      setBoard(newGame(initialBoard))
+    }
+  }
 }
 
-function setPlayerTurn() {
-
+function determinePlayerTurn(playerOneTurn) {
+  if (playerOneTurn) {
+    return 'blue'
+  } else {
+    return 'white'
+  }
 }
 
 function setToKing(board, rowIndex, colIndex) {
@@ -285,24 +295,23 @@ function determineValidMoves(board, yMovementIncrement) {
   return validMoves
 }
 
-function GameOver(board) {
+function checkForWinner(board) {
   const allRows = board.flat()
   const allCheckers = allRows.filter(Boolean);
   const pieceCount = {
     'white': 0,
-    'black': 0
+    'blue': 0
   }
   allCheckers.forEach((checker) => {
     pieceCount[checker.color] += 1
   })
 
-  for (const [key, value] of pieceCount) {
-    if (value === 0) {
-      return key === 'white' ? 'black' : 'white'
+  for (const color in pieceCount) {
+    if (pieceCount[color] === 0) {
+      return color === 'white' ? 'black' : 'white'
     }
   }
 }
-
 
 
 const App = () => {
